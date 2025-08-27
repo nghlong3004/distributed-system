@@ -5,14 +5,17 @@ import vn.io.nghlong3004.model.MessageQueue;
 import vn.io.nghlong3004.service.ConsumerService;
 import vn.io.nghlong3004.service.ProducerService;
 import vn.io.nghlong3004.service.ThreadService;
+import vn.io.nghlong3004.util.ObjectContainer;
 
 public class DistributedSystemApplication {
 
   public static void main(String[] args) throws InterruptedException {
     MessageQueue<Message> messageQueue = new MessageQueue<Message>(5);
     ThreadService threadService = new ThreadService();
-    threadService.runThread(new ProducerService(messageQueue), 3, "Producer");
-    threadService.runThread(new ConsumerService(messageQueue), 5, "Consumer");
+    threadService.runThread(new ProducerService(messageQueue),
+        ObjectContainer.getProperty().getThreadProducerSize(), "Producer");
+    threadService.runThread(new ConsumerService(messageQueue),
+        ObjectContainer.getProperty().getThreadConsumerSize(), "Consumer");
   }
 
 }

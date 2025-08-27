@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 import vn.io.nghlong3004.model.Message;
 import vn.io.nghlong3004.model.MessageQueue;
+import vn.io.nghlong3004.util.ObjectContainer;
 
 public class ProducerService implements Runnable {
 
@@ -26,7 +27,7 @@ public class ProducerService implements Runnable {
       message.setCreated(created);
       try {
         messageQueue.put(message);
-        Thread.sleep(100);
+        Thread.sleep(ObjectContainer.getProperty().getThreadProducerSleepMs());
       } catch (InterruptedException e) {
         e.printStackTrace();
       }

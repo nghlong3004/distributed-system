@@ -28,7 +28,7 @@ public class ConsumerService implements Runnable {
         Message message = messageQueue.take();
         log.info("Thread: {} insert message to database", Thread.currentThread().getName());
         this.consumerRepository.insert(message);
-        Thread.sleep(100);
+        Thread.sleep(ObjectContainer.getProperty().getThreadConsumerSleepMs());
       } catch (InterruptedException e) {
         e.printStackTrace();
       }

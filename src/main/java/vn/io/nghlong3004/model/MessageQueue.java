@@ -25,8 +25,6 @@ public class MessageQueue<T> {
   private int consecutiveLowHits = 0;
   private int size = 0;
 
-  private final Object monitor;
-
   public MessageQueue(int capacity) {
     log.info("Initial MessageQueue with capacity = {}", capacity);
     if (capacity <= 0) {
@@ -42,69 +40,55 @@ public class MessageQueue<T> {
 
     head = null;
     tail = head;
-
-    monitor = new Object();
   }
 
-  public void put(T item) throws InterruptedException {
-    log.info("Thread: {} put item", Thread.currentThread().getName());
+  public synchronized void put(T item) throws InterruptedException {
+    log.info("Thread: {} join put", Thread.currentThread().getName());
+    while (size == capacity) {
+      if (tryGrowLocked())
+        break;
+      this.wait();
+    }
+    log.info("Thread: {} start put", Thread.currentThread().getName());
+    consecutiveFullHits = 0;
     Node<T> node = new Node<>(item);
-
-    synchronized (monitor) {
-      log.info("Thread: {} join put", Thread.currentThread().getName());
-      while (size == capacity) {
-        if (tryGrowLocked())
-          break;
-        monitor.wait();
-      }
-      log.info("Thread: {} start put", Thread.currentThread().getName());
-      consecutiveFullHits = 0;
-
-      if (head == null)
-        head = tail = node;
-      else {
-        tail.next = node;
-        tail = node;
-      }
-      size++;
-      monitor.notify();
+    if (head == null)
+      head = tail = node;
+    else {
+      tail.next = node;
+      tail = node;
     }
+    size++;
+    this.notify();
   }
 
-  public T take() throws InterruptedException {
-    log.info("Thread: {} take", Thread.currentThread().getName());
-    synchronized (monitor) {
-      log.info("Thread: {} join take", Thread.currentThread().getName());
-      while (head == null) {
-        monitor.wait();
-      }
-      log.info("Thread: {} start take", Thread.currentThread().getName());
-      Node<T> node = head;
-      head = head.next;
-      if (head == null)
-        tail = null;
-      size--;
-      T item = node.item;
-      node.item = null;
-      node.next = null;
-
-      monitor.notify();
-
-      tryShrinkLocked();
-      return item;
+  public synchronized T take() throws InterruptedException {
+    log.info("Thread: {} join take", Thread.currentThread().getName());
+    while (head == null) {
+      this.wait();
     }
+    log.info("Thread: {} start take", Thread.currentThread().getName());
+    Node<T> node = head;
+    head = head.next;
+    if (head == null)
+      tail = null;
+    size--;
+    T item = node.item;
+    node.item = null;
+    node.next = null;
+
+    this.notify();
+
+    tryShrinkLocked();
+    return item;
   }
 
-  public int size() {
-    synchronized (monitor) {
-      return size;
-    }
+  public synchronized int size() {
+    return size;
   }
 
-  public int capacity() {
-    synchronized (monitor) {
-      return capacity;
-    }
+  public synchronized int capacity() {
+    return capacity;
   }
 
   private boolean tryGrowLocked() {
