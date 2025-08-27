@@ -3,12 +3,25 @@ package vn.io.nghlong3004.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Property {
 
+  private static Logger log = LoggerFactory.getLogger(Property.class);
   private final Properties properties;
 
-  public Property() {
+  private static Property instance;
+
+  public static Property getInsance() {
+    if (instance == null) {
+      instance = new Property();
+    }
+    return instance;
+  }
+
+  private Property() {
+    log.info("initilized proerty...");
     properties = new Properties();
     try (InputStream input = getClass().getResourceAsStream("/application.properties")) {
       properties.load(input);

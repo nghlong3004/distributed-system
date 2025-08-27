@@ -19,7 +19,16 @@ public class DatabaseUtil {
   private final String password;
   private final String driverClassName;
 
-  public DatabaseUtil(Property property) {
+  private static DatabaseUtil instance;
+
+  public static DatabaseUtil getInstance(Property property) {
+    if (instance == null) {
+      instance = new DatabaseUtil(property);
+    }
+    return instance;
+  }
+
+  private DatabaseUtil(Property property) {
     logger.info("Loading DatabaseUtil...");
     url = property.getDatasourceUrl();
     username = property.getDatasourceUsername();
@@ -64,9 +73,9 @@ public class DatabaseUtil {
       loadDriver();
       Connection connection = createConnection();
       PreparedStatement preparedStatement = statement(query, objects);
+      logger.info("This is {} SQL query", getTypeQuery(query));
+      logger.info("Execute query");
       if (query.startsWith("SELECT")) {
-        logger.info("This is SELECT SQL query");
-        logger.info("Execute query");
         ResultSet resultSet = preparedStatement.executeQuery();
         logger.info("Get meta data");
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -77,8 +86,6 @@ public class DatabaseUtil {
 
         resultSet.close();
       } else {
-        logger.info("This is not SELECT SQL query");
-        logger.info("Execute query");
         preparedStatement.executeUpdate();
       }
 
@@ -115,6 +122,10 @@ public class DatabaseUtil {
       columnNames.add(Helper.snakeCaseToCamelCase(resultSetMetaData.getColumnName(i)));
     }
     return columnNames;
+  }
+
+  private String getTypeQuery(String query) {
+    return query.substring(0, query.indexOf(' '));
   }
 
 }
